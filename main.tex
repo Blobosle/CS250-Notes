@@ -53,7 +53,8 @@
 
 \definecolor{greenText}{rgb}{0.5, 0.7, 0.5}
 \definecolor{greyText}{rgb}{0.5, 0.5, 0.5}
-\definecolor{codeFrame}{rgb}{0.5, 0.7, 0.5}
+% \definecolor{codeFrame}{rgb}{0.5, 0.7, 0.5}
+\definecolor{codeFrame}{rgb}{0.45, 0.66, 0.76}
 \definecolor{moonstoneblue}{rgb}{0.45, 0.66, 0.76}
 \definecolor{moondark}{rgb}{0.30, 0.50, 0.60}
 
@@ -121,6 +122,7 @@ An \textit{asserted} signal is logically true, the \textit{deasserted} is the op
     fonttitle=\bfseries\color{white},
     boxed title style={size=small,colframe=moonstoneblue,sharp corners},
     sharp corners,
+    label=box:logic-types,
 ]
     {\color{moondark}\textbf{Combinational logic}}: No memory in components, hence same output given same input. \\
     {\color{moondark}\textbf{Sequential logic}}: Memory in components, hence output depends on input and current memory state.
@@ -238,7 +240,7 @@ The combination of the adder and the logic gates, coupled with a multiplexor wit
 
 \begin{figure}[htbp]
     \centering
-    \fcolorbox{codeframe}{white}{
+    \fcolorbox{codeFrame}{white}{
         \includegraphics[width=0.2\linewidth]{img/alu2.png}
     }
     \caption{\textit{1-bit alu with logical operations and addition}}
@@ -261,7 +263,7 @@ To implement a \texttt{NOR} function, existing components can be combined, $(\ov
 
 \begin{figure}[htbp]
     \centering
-    \fcolorbox{codeframe}{white}{
+    \fcolorbox{codeFrame}{white}{
         \includegraphics[width=0.32\linewidth]{img/alu3.png}
     }
     \caption{\textit{1-bit ALU that performs subtraction, and \texttt{NOR} operations}}
@@ -277,7 +279,7 @@ $$Zero = \overline{(R_0 + R_1 + R_2 + ... + R_{63})}$$
 
 \begin{figure}[htbp]
     \centering
-    \fcolorbox{codeframe}{white}{
+    \fcolorbox{codeFrame}{white}{
        \includegraphics[width=0.4\linewidth]{img/alu4.png}
     }
     \caption{\textit{64-bit ALU \texttt{OR} tree and an inverter for determining the Zero flag}}
@@ -288,7 +290,7 @@ For a generalized symbol of the ALU, \autoref{fig:generalalu}, where \texttt{ALU
 
 \begin{figure}[htbp]
     \centering
-    \fcolorbox{codeframe}{white}{
+    \fcolorbox{codeFrame}{white}{
        \includegraphics[width=0.2\linewidth]{img/alu5.png}
     }
     \caption{\textit{General symbol for an ALU or an adder}}
@@ -299,6 +301,133 @@ For a generalized symbol of the ALU, \autoref{fig:generalalu}, where \texttt{ALU
 
 \subsection*{Clocks}
 
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Clocking methodology semantics,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+]
+    {\color{moondark}\textbf{Edge triggered clocking}}: State changes occur on a clock edge. \\
+    {\color{moondark}\textbf{Synchronous system}}: Type of memory system where data is read only when a clock signal indicates stability (i.e. non-changing value).
+\end{tcolorbox}
+
+A \hyperref[box:logic-types]{combinational logic block}, recieves an input and then generates an output for a state element which is updated on a clock edge.
+
+An edge-triggered methodology allows a state element to be read and written in the same clock cycle without creating a race condition.
+
+For this to work, the clock cycle must be long enough for the state element to have received a stable input before the next active clock edge.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.5\linewidth]{img/clock1.png}
+    }
+    \caption{\textit{Edge-triggered state element to be read and written to in one active clock edge}}
+\end{figure}
+
+One such state element is the register file.
+
+\subsection*{Flip-flops \& Latches}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Types of clocked memory elements,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+]
+    {\color{moondark}\textbf{Flip-flops}}: Edge-triggered element that changes the stored state only at a clock edge. \\
+    {\color{moondark}\textbf{Latches}}: Level-sensitive element that changes the stored state at any time the clock is asserted.
+\end{tcolorbox}
+
+Flip-flops are build upon latches and are going to be used in edge-triggered systems.
+
+A \textbf{D flip-flop} or \textbf{D latch} is used for storing the value of one data input signal, in the internal memory, at the clock edge.
+
+To implement a \textbf{D latch}, it requires two inputs, the data to be stored \texttt{D}, and the clock signal \texttt{C}, producing two outputs, the value of the internal state \texttt{Q}, and its complement \(\overline{\mathtt{Q}}\).
+
+The \hyperref[]{implementation} has cross-coupled \texttt{NOR} gates that store the state value unless \texttt{C} is asserted, in which case \texttt{D} replaces the value of \texttt{Q} and is stored.
+
+\pagebreak
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.3\linewidth]{img/dlatch.png}
+    }
+    \caption{\textit{D latch, composed of crossed \texttt{NOR} gates and a \texttt{SR} latch}}
+    \vspace{1em}
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.35\linewidth]{img/dlatch1.png}
+    }
+    \caption{\textit{Progression of a D latch, assuming output is initially deasserted}}
+\end{figure}
+
+To implement a \textbf{D flip-flop}, with a \underline{falling-edge trigger}, we can use two D latches, master and slave. Master sets input \texttt{D} when \texttt{C} is asserted. When \texttt{C} falls, master is closed, but slave is open and gets its input from master's \texttt{Q}.
+
+In this sense, the rising-edge represents when the master takes in the \texttt{D} value, and the falling-edge represents when the slave takes in the master's \texttt{D} producing the final \texttt{Q}.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.5\linewidth]{img/dflip.png}
+    }
+    \caption{\textit{D flip-flop with a falling-edge trigger made from two D latches, master and slave}}
+    \vspace{1.5em}
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.5\linewidth]{img/dflip1.png}
+    }
+    \caption{\textit{Progression of a D flip-flop with a falling-edge trigger, where output is initially deasserted}}
+\end{figure}
+
+The minimum time \texttt{D} must retain a valid input is the setup time plus the hold time (after edge).
+
+\subsection*{Register files}
+
+A \textbf{register file} consists of a bunch of \textbf{registers} that can be read and written to, and a \texttt{WriteReg} control signal (clock).
+
+For writing it requires the control signal, the number of the register to write to (\texttt{Write register}), and the data to write (\texttt{Write data}).
+
+For reading it requires the numbers of the registers to read from (\texttt{Read register number 1 \& 2}), and it outputs the read contents from two registers (\texttt{Read data 1 \& 2}).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.35\linewidth]{img/regfile1.png}
+    }
+    \caption{\textit{Register file with two read ports and one write port}}
+\end{figure}
+
+The implementation for the \underline{write port} consists of a decoder that will select one of the \texttt{n - 1} registers that will be \texttt{AND}ed with the \texttt{WriteReg} signal to act as the \texttt{C} input for the registers (D flip-flops). The \texttt{D} input for every register is the \texttt{Write data} input from the reg. file.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.55\linewidth]{img/regwrite1.png}
+    }
+    \caption{\textit{Write implementation in the register file}}
+\end{figure}
+
+The implementation for the two \underline{read ports} consists of using the stored state of the registers (\texttt{Q} output), as inputs for two different MUXes that use the \texttt{Read register number 1 \& 2} reg. file inputs as control signals to output the information of the two registers specified.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.55\linewidth]{img/regread1.png}
+    }
+    \caption{\textit{Read implementation in the register file}}
+\end{figure}
 
 
 
