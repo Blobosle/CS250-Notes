@@ -57,7 +57,6 @@
 \definecolor{moonstoneblue}{rgb}{0.45, 0.66, 0.76}
 \definecolor{moondark}{rgb}{0.30, 0.50, 0.60}
 
-
 \lstdefinestyle{code}{
   frame=single,
   rulecolor=\color{codeFrame},
@@ -127,13 +126,12 @@ An \textit{asserted} signal is logically true, the \textit{deasserted} is the op
     {\color{moondark}\textbf{Sequential logic}}: Memory in components, hence output depends on input and current memory state.
 \end{tcolorbox}
 
-
 \begin{figure}[htbp]
     \centering
     \fcolorbox{codeFrame}{white}{
         \includegraphics[width=0.5\linewidth]{img/gates.png}%
     }
-    \caption{\textit{AND gate, OR gate, and inverter}}
+    \caption{\textit{\texttt{AND} gate, \texttt{OR} gate, and inverter}}
 \end{figure}
 
 The gates can be combined to form different forms of logic. An example of this is $\overline{\overline{A} + B}$ which is equivalent to $A \cdot \overline{B}$ by De Morgan's law, seen in \autoref{fig:gates2}.
@@ -179,6 +177,134 @@ In the case of the two-input MUX, its representation is the following, $C=(A \cd
 $$n \text{ (data inputs)} \therefore \log_2{n} = S \text{ selector bits required to represent all inputs}$$
 
 Often times a decoder generates n bits for a MUX, to be used as a selector signal.
+
+\subsection*{Buses}
+
+A collection of data lines that is treated as a single logical signal.
+
+When showing a logic unit whose inputs and outputs are buses, the unit must be replicated a sufficient number of times to accommodate the width of the input.
+
+You can use multiplexors to select between two buses, requiring n inputs to represent n-bit buses.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+        \includegraphics[width=0.28\linewidth]{img/bus1.png}
+    }
+    \caption{\textit{1-bit multiplexors replicated 64 times to represent two 64-bit buses}}
+\end{figure}
+
+\subsection*{ALUs}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Operation done by the ALU,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+]
+    {\color{moondark}\textbf{Logic operations}}: \texttt{AND} and \texttt{OR} gate operations, with \texttt{NOR} being available through an inversion of both input signals with \texttt{AInvert} and \texttt{BInvert} control signals. \\
+    {\color{moondark}\textbf{Arithmetic operations}}: Addition and subtraction through the full adder, and \texttt{BInvert} control signal on one input for determining the type of operation.
+\end{tcolorbox}
+
+The LEGv8 word is 64 bits wide, as such a 64 bit wide ALU is required (64 1-bit ALUs).
+
+In its simplest form, a \underline{1-bit logical unit} for \texttt{AND} and \texttt{OR} operations simply requires a multiplexor an a one bit control signal to select between the two operations ($2^1=1$).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+        \includegraphics[width=0.28\linewidth]{img/alu1.png}
+    }
+    \caption{\textit{1-bit logical unit for \texttt{AND} and \texttt{OR} operations}}
+\end{figure}
+
+Implementing addition requires two input operands, one output, a \texttt{CarryIn} bit carried from the less-significant bits of the operation (i.e. another 1-bit logical unit), and a \texttt{CarryOut} bit to be carried forward to the next more significant bit.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+        \includegraphics[width=0.8\linewidth]{img/adder1.png}
+    }
+    \caption{\textit{Full adder that performs mod 2 addition}}
+\end{figure}
+
+The combination of the adder and the logic gates, coupled with a multiplexor with a control signal to determine the operation makes a complete 1-bit ALU, which can be seen in \autoref{fig:1bitalu}.
+\pagebreak
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+        \includegraphics[width=0.2\linewidth]{img/alu2.png}
+    }
+    \caption{\textit{1-bit alu with logical operations and addition}}
+    \label{fig:1bitalu}
+\end{figure}
+
+For expanding to a 64-bit ALU, the adders have to set up a ripple carry from the least to the most significant bit.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+        \includegraphics[width=0.2\linewidth]{img/ripplecarry.png}
+    }
+    \caption{\textit{Ripple carry implemented for a 64-bit ALU}}
+\end{figure}
+
+By inverting the second input (\texttt{BInvert} = 1, seen in \autoref{fig:subalu}) and setting \texttt{CarryIn} to 1 in the least significant bit of the ALU, we get two’s complement subtraction of \texttt{b} from \texttt{a}.
+
+To implement a \texttt{NOR} function, existing components can be combined, $(\overline{a+b})=\overline{a} \cdot \overline{b}$ (DeMorgan's theorem), which means we need an \texttt{AND} and two inverters for both \texttt{a} and \texttt{b}, seen in \autoref{fig:subalu}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+        \includegraphics[width=0.32\linewidth]{img/alu3.png}
+    }
+    \caption{\textit{1-bit ALU that performs subtraction, and \texttt{NOR} operations}}
+    \label{fig:subalu}
+\end{figure}
+
+On a 64-bit ALU we can use a zero flag to help with conditional branch instructions in LEGv8 (e.g. \texttt{CBZ}), as they receive to inputs and require to test if the subtraction has a zero.
+
+The following represents this with an inversion of an \texttt{OR} tree on all results from the subtraction considering a 64-bit subtraction, fully represented in \autoref{fig:64aluzero}.
+\vspace{-1em}
+$$Zero = \overline{(R_0 + R_1 + R_2 + ... + R_{63})}$$
+\vspace{-3em}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.4\linewidth]{img/alu4.png}
+    }
+    \caption{\textit{64-bit ALU \texttt{OR} tree and an inverter for determining the Zero flag}}
+    \label{fig:64aluzero}
+\end{figure}
+
+For a generalized symbol of the ALU, \autoref{fig:generalalu}, where \texttt{ALU operation} is the control signal of the MUX that determines the type of operation.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.2\linewidth]{img/alu5.png}
+    }
+    \caption{\textit{General symbol for an ALU or an adder}}
+    \label{fig:generalalu}
+\end{figure}
+
+\pagebreak
+
+\subsection*{Clocks}
+
+
+
+
+
+
+
 
 % \begin{lstlisting}[caption={Simple SIGINT handler}]
 % unsigned char stop = 0;
