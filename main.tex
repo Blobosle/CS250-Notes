@@ -19,6 +19,8 @@
 \usepackage[most]{tcolorbox}
 \usepackage{hyperref}
 \usepackage{amssymb}
+\usepackage{tabularray}
+\usepackage{subcaption}
 
 \usepackage{caption}
 \captionsetup[lstlisting]{labelformat=empty,labelsep=none}
@@ -59,19 +61,20 @@
 \definecolor{moondark}{rgb}{0.30, 0.50, 0.60}
 
 \lstdefinestyle{code}{
-  frame=single,
-  rulecolor=\color{codeFrame},
-  numbers=left,
-  numbersep=8pt,
-  numberstyle=\tiny\color{greyText},
-  commentstyle=\color{greenText},
-  basicstyle=\linespread{1.1}\ttfamily\footnotesize,
-  keywordstyle=\ttfamily\footnotesize,
-  showstringspaces=false,
-  xleftmargin=1.95em,
-  framexleftmargin=1.6em,
-  breaklines=true,
-  postbreak=\mbox{\textcolor{greenText}{$\hookrightarrow$}\space}
+    frame=single,
+    rulecolor=\color{codeFrame},
+    numbers=left,
+    numbersep=8pt,
+    numberstyle=\tiny\color{greyText},
+    commentstyle=\color{greenText},
+    basicstyle=\linespread{1.1}\ttfamily\footnotesize,
+    keywordstyle=\ttfamily\footnotesize,
+    showstringspaces=false,
+    xleftmargin=1.95em,
+    framexleftmargin=1.6em,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{greenText}{$\hookrightarrow$}\space},
+    linewidth=0.6\textwidth,
 }
 \lstset{style=code, language=C}
 
@@ -429,6 +432,209 @@ The implementation for the two \underline{read ports} consists of using the stor
     }
     \caption{\textit{Read implementation in the register file}}
 \end{figure}
+
+\pagebreak
+
+\section*{Chapter 2}
+
+The size of a register in LEGv8 is 64 bits, which are denominated as doublewords (8 bytes).
+
+A word, the natural unit of access in a computer, is 32 bits (4 bytes).
+
+\subsection*{LEGv8 Assembly}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Relevant LEGv8 instructions,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+]
+    \begin{tabular}{@{} l @{\quad} l @{}}
+    {\color{moondark}\textbf{Addition}}:           & \texttt{ADD X1, X2, X3}     \\
+    {\color{moondark}\textbf{Subtraction}}:        & \texttt{SUB X1, X2, X3}     \\
+    {\color{moondark}\textbf{Add immediate}}:      & \texttt{ADDI X1, X2, \#20}  \\
+    {\color{moondark}\textbf{Subtract immediate}}: & \texttt{SUBI X1, X2, \#20}  \\
+    {\color{moondark}\textbf{Load register}}:      & \texttt{LDUR X1, [X2, \#20] \ \ // Load mem. at addrs. X2 + 20} \\
+    {\color{moondark}\textbf{Store register}}:     & \texttt{STUR X1, [X2, \#20] \ \ // Store at addrs. X2 + 20} \\
+    {\color{moondark}\textbf{Logical AND}}:        & \texttt{AND X1, X2, X3}  \\
+    {\color{moondark}\textbf{Logical Inclusive OR}}: & \texttt{ORR X1, X2, X3}  \\
+    {\color{moondark}\textbf{Logical Exclusive OR}}: & \texttt{EOR X1, X2, X3}  \\
+    {\color{moondark}\textbf{Bitwise Left}}:       & \texttt{LSL X1, X2, \#20}  \\
+    {\color{moondark}\textbf{Bitwise Right}}:      & \texttt{LSR X1, X2, \#20}  \\
+    {\color{moondark}\textbf{Conditional branch is 0}}: & \texttt{CBZ X1, L0 \ \ // Inmediate in operand is in word bytes} \\
+    {\color{moondark}\textbf{Conditional branch not 0}}: & \texttt{CBNZ X1, L0 \ \ // Inmediate in operand is in word bytes} \\
+    {\color{moondark}\textbf{Branch}}:             & \texttt{B L0 \ \ // Inmediate in operand is in word bytes}
+    \end{tabular}
+\end{tcolorbox}
+
+The above list excludes instructions that set flags, e.g. \texttt{ADDS, SUBS, SUBIS, ADDIS}, and zero independent conditional branching, e.g. \texttt{B.cond}.
+
+\subsection*{LEGv8 architecture design}
+
+There are 32 64-bit registers, limited as larger number of registers implies increasing clock cycle time as electronic signals take longer as they must travel further. It also makes instruction formats more constrained.
+
+Many architectures have alignment restriction that establish that words must start at addresses that are multiples of 4 and doublewords at multiples of 8.
+
+\pagebreak
+
+\subsection*{Signed and unsigned numbers}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Denomination of bits in a bit string,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Least significant bit}}: The rightmost bit in a bit string. In a doubleword this is bit 63. \\
+    {\color{moondark}\textbf{Most significant bit}}: The leftmost bit in a bit string. In a doubleword this is bit 0.
+\end{tcolorbox}
+
+A \textbf{sign and magnitude} representation of a signed number has one bit set aside to represent the sign of the integer. Issues come with having a \texttt{-0} and \texttt{+0}, and more steps needed to determine the sign by the adder.
+
+For making the hardware simple, \textbf{two's complement} representation is used, which used leading \texttt{0}s to denote positives, and leading \texttt{1}s to denote negatives. This means that the most significant bit can be used as a sign bit, making conversions the following way.
+
+\vspace{-1em}
+$$(x_{63} \cdot -2^{63})+(x_{62} \cdot 2^{62})+(x_{61} \cdot 2^{61})+...+(x_{1} \cdot 2^{1})+(x_{0} \cdot 2^{0})$$
+
+As an example,
+\vspace{-1em}
+$$11111111 \ 11111111 \ 11111111 \ 11111111 \ 11111111 \ 11111111 \ 11111111 \ 11111100_{\text{two}}=-4_{\text{ten}}$$
+
+\underline{Overflow} occurs when the sign bit gets overridden, i.e. \texttt{0} when negative, \texttt{1} when positive.
+
+Using two's complement, \underline{sign extension}, used for conditional branching, just requires to copy the sign bit \texttt{m - n} bits over, where \texttt{m} is the new size of the bit string.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Power of 2 prefix definitions,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Kibibyte (Kib)}}: $2^{10}$ bytes. \\
+    {\color{moondark}\textbf{Mebibyte (Mib)}}: $2^{20}$ bytes. \\
+    {\color{moondark}\textbf{Gibibyte (Gib)}}: $2^{30}$ bytes. \\
+    {\color{moondark}\textbf{Tebibyte (Tib)}}: $2^{40}$ bytes. \\
+    {\color{moondark}\textbf{Pebibyte (Pib)}}: $2^{50}$ bytes.
+\end{tcolorbox}
+
+\pagebreak
+
+\subsection*{Instruction format fields}
+
+\begin{table}[htbp]
+  \centering
+
+  \begin{minipage}[t]{0.45\textwidth}
+    \centering
+    \begin{tabular}{|l|l|l|l|l|}
+      \hline
+      \texttt{Opcode} & \texttt{Rm} & \texttt{shamt} & \texttt{Rn} & \texttt{Rd} \\
+      11 bits & 5 bits & 6 bits  & 5 bits  & 5 bits \\
+      \hline
+    \end{tabular}
+    \captionof{table}{\textit{R‐type format, \texttt{ADD, SUB, LSL, LSR}}}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.45\textwidth}
+    \centering
+    \begin{tabular}{|l|l|l|l|l|}
+      \hline
+      \texttt{Opcode} & \texttt{Address} & \texttt{Op2} & \texttt{Rn} & \texttt{Rt} \\
+      11 bits & 9 bits & 2 bits  & 5 bits  & 5 bits \\
+      \hline
+    \end{tabular}
+    \captionof{table}{\textit{D‐type format, \texttt{LDUR, STUR}}}
+  \end{minipage}
+
+  \vspace{1em}
+
+  \begin{minipage}[t]{0.45\textwidth}
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+      \hline
+      \texttt{Opcode} & \texttt{Immediate} & \texttt{Rn} & \texttt{Rd} \\
+      10 bits & 12 bits & 5 bits  & 5 bits \\
+      \hline
+    \end{tabular}
+    \captionof{table}{\textit{I‐type format, \texttt{ADDI, SUBI}}}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.45\textwidth}
+    \centering
+    \begin{tabular}{|l|l|l|}
+      \hline
+      \texttt{Opcode} & \texttt{Address} & \texttt{Rd} \\
+      8 bits & 19 bits & 5 bits \\
+      \hline
+    \end{tabular}
+      \captionof{table}{\textit{Conditional branch format, \texttt{CB(N)Z}}}
+  \end{minipage}
+
+  \vspace{1em}
+
+  \begin{minipage}[t]{0.5\textwidth}
+    \centering
+    \begin{tabular}{|l|l|}
+      \hline
+      \texttt{Opcode} & \texttt{Address} \\
+      6 bits & 26 bits \\
+      \hline
+    \end{tabular}
+    \captionof{table}{\textit{Unconditional branch format, \texttt{B}}}
+  \end{minipage}
+
+\end{table}
+
+All instruction field formats are 32 bits, thus the name \textit{32-bit instructions}.
+
+The \texttt{opcode} denotes the operation and format of an instruction.
+
+The register operands, \texttt{Rn}, \texttt{Rm}, and \texttt{Rd} are 5 bits to represent the 32 registers ($\log_2{32}=5$).
+
+The \texttt{address} field can represent a region of $\pm2^8$ bytes around the base register \texttt{Rn}.
+
+The \texttt{shamt} field represents the shift amount used by bit-shift instructions.
+
+\subsection*{Conditional Statement \& Loops}
+
+\begin{lstlisting}[caption={Simple conditional statement implementation}]
+    CBNZ X3, Else       // if (X3 == 0) {
+    ADD X0, X1, X2      //     X0 = X1 + X2;
+    B Exit              // }
+Else:                   // else {
+    SUB X0, X1, X2      //     X0 = X1 - X2;
+Exit:                   // }
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption={Simple while loop implementation}]
+    ADDI X0, XZR, #10   // X0 = 10;
+Loop:
+    CBZ X0, Exit        // while (X0 != 0) {
+    SUBI X0, X0, #1     //     X0 -= 1;
+    ADD X1, X2, X0      //     X1 = X2 + X0;
+    B Loop              // }
+Exit:
+\end{lstlisting}
+
+
+
+
 
 
 
