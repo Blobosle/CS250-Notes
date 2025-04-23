@@ -74,7 +74,7 @@
     framexleftmargin=1.6em,
     breaklines=true,
     postbreak=\mbox{\textcolor{greenText}{$\hookrightarrow$}\space},
-    linewidth=0.6\textwidth,
+    % linewidth=0.6\textwidth,
 }
 \lstset{style=code, language=C}
 
@@ -614,10 +614,10 @@ The \texttt{shamt} field represents the shift amount used by bit-shift instructi
 
 \begin{lstlisting}[caption={Simple conditional statement implementation}]
     CBNZ X3, Else       // if (X3 == 0) {
-    ADD X0, X1, X2      //     X0 = X1 + X2;
-    B Exit              // }
+    ADD  X0, X1, X2     //     X0 = X1 + X2;
+    B    Exit           // }
 Else:                   // else {
-    SUB X0, X1, X2      //     X0 = X1 - X2;
+    SUB  X0, X1, X2     //     X0 = X1 - X2;
 Exit:                   // }
 \end{lstlisting}
 
@@ -625,13 +625,49 @@ Exit:                   // }
 \begin{lstlisting}[caption={Simple while loop implementation}]
     ADDI X0, XZR, #10   // X0 = 10;
 Loop:
-    CBZ X0, Exit        // while (X0 != 0) {
+    CBZ  X0, Exit       // while (X0 != 0) {
     SUBI X0, X0, #1     //     X0 -= 1;
-    ADD X1, X2, X0      //     X1 = X2 + X0;
-    B Loop              // }
+    ADD  X1, X2, X0     //     X1 = X2 + X0;
+    B    Loop           // }
 Exit:
 \end{lstlisting}
 
+For a more complete example, the following converts the C code into LEGv8 assembly instructions.
+
+\begin{lstlisting}[caption={Sample C code loop into LEGv8 ASM}]
+// C
+int i = 0;
+int k = 10;
+while (save[i] == k) {
+    i += 1;
+}
+
+// X25: Address of save[]
+
+// Textbook LEGv8 ASM
+    ADDI X22, XZR, #0   // EOR X22, X22, X22
+    ADDI X14, XZR, #10
+Loop:
+    LSL  X10, X22, #2
+    ADD  X10, X10, X25
+    LDUR X11, [X10, #0]
+    SUB  X12, X10, X14
+    CBNZ X12, Exit
+    ADDI X22, X22, #1
+    B    Loop
+Exit:
+
+// Alternate LEGv8 ASM
+    ADD  X10, XZR, X25
+    ADDI X11, XZR, #10
+Loop:
+    LDUR X12, [X10, #0]
+    SUB  X12, X12, X11
+    CBNZ X12, Exit
+    ADDI X10, X10, #8
+    B Loop
+Exit:
+\end{lstlisting}
 
 
 
