@@ -634,7 +634,7 @@ Exit:
 
 For a more complete example, the following converts the C code into LEGv8 assembly instructions.
 
-\begin{lstlisting}[caption={Sample C code loop into LEGv8 ASM}]
+\begin{lstlisting}[caption={C code loop into LEGv8 ASM}]
 // C
 int i = 0;
 int k = 10;
@@ -668,6 +668,36 @@ Loop:
     B Loop
 Exit:
 \end{lstlisting}
+
+You can "throw away" the result by writing into \texttt{XZR}, the zero register.
+
+\subsection*{Set Flag Branching}
+
+The conditional branch instruction, \texttt{B.cond}, allows for \texttt{.cond} to be used for signed comparisons, \texttt{EQ} (equals), \texttt{NE} (not equal), \texttt{LT} (less than), \texttt{LE} (less than or equal), \texttt{GT}, or \texttt{GE}.
+
+Also it allows for unsigned comparisons, \texttt{LO}, \texttt{LS} (lower or same), \texttt{HI}, or \texttt{HS} (higher or same).
+
+The flag for comparison is set by instructions like, \texttt{ADDS}, \texttt{ADDIS}, or \texttt{SUBS}, but they are limited in number as they create dependencies that obstruct pipelining execution.
+
+A use case is bounds checking, that is, $0\le x < y$.
+\pagebreak
+
+\begin{lstlisting}[caption={Bounds checking shortcut in LEGv8 ASM}]
+// Pseudo C
+if (X20 >= X11 || X20 < 0) {
+    goto Error;
+}
+
+// LEGv8 ASM
+    SUBS XZR, X20, X11
+    B.HS Error
+    B    Exit
+Error:
+    // Error handling
+Exit:
+\end{lstlisting}
+
+Signed negative numbers look massive when looked at from an unsigned comparison in two's complement, and it also allows for checking if it is below a number (\texttt{X11} in example).
 
 
 
