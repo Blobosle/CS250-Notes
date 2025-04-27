@@ -823,6 +823,36 @@ Systems become dependable when there is redundancy to account for solving failur
 
 \subsection*{Amdahl’s Law}
 
+Related to the design principle of \textit{making the common case fast}, you only benefit from improving the part you actually use, which is illustrated in \textbf{Amdahl's law}.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Amdahl's Law,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Law}}: Performance enhancement possible with a given improvement is limited by the amount that the improved feature is used.
+\end{tcolorbox}
+\vspace{-2em}
+$$S_{\text{total}}\;=\;\frac{1}{(1 - f) + \frac{f}{S_e}}$$
+
+Splitting up the original time into the unimprovable part $1-f$ and the improvable part $f$, speeding up the $f$ portion by $S_E$ yields a time ratio of $$\frac{T_\text{new}}{T_\text{old}}\rightarrow (1-f) + \frac{f}{S_E}$$
+
+As $S_E \rightarrow \infty$, the maximum overall speedup is $\frac{1}{1-f}$.
+
+Thus, taken as the ratio between the old and new speeds, the formula for Amdahl's Law emerges.
+
+
+
+
+
+
 
 
 
