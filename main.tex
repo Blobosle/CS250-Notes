@@ -15,7 +15,7 @@
 \usepackage{color}
 \usepackage{inconsolata}
 \usepackage{graphicx}
-\usepackage{setspace}
+\usepackage[parskip]{setspace}
 \usepackage[most]{tcolorbox}
 \usepackage{hyperref}
 \usepackage{amssymb}
@@ -698,6 +698,141 @@ Exit:
 \end{lstlisting}
 
 Signed negative numbers look massive when looked at from an unsigned comparison in two's complement, and it also allows for checking if it is below a number (\texttt{X11} in example).
+
+\pagebreak
+
+\section*{Chapter 3}
+
+\subsection*{Floating point representation}
+
+Compromise must be found between the size of the \textit{fraction} and the \textit{exponent}.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Tradeoff of floating-point representation,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Precision}}: Increased by an increase in the size for the \textit{mantissa} or \textit{fraction}. \\
+    {\color{moondark}\textbf{Range}}: Increased by an increase in the size for the \textit{exponent}.
+\end{tcolorbox}
+
+A LEGv8 implementation of \textbf{floating-point} numbers has \texttt{s} as the sign bit, \texttt{exponent} an 8-bit with bias, and \texttt{fraction} a 23-bit number.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.7\linewidth]{img/legv8-float.png}
+    }
+    \caption{\textit{LEGv8 floating-point representation}}
+\end{figure}
+\vspace{-2em}
+$$(-1)^S \times F \times 2^E$$
+
+Range of representation is $2_{\text{ten}} \times 10^{38}$ considering $2^7 (\text{exponent 8-bit rep. divided by 2 for bias}) \approx 38$
+
+Overflow entails the exponent being too large for the \texttt{exponent (E)} field to represent it. Underflow is the same situation but the \texttt{exponent} field representing a negative value.
+
+To reduce the chances of underflow or overflow we use \textbf{double precision}, which is a floating-point value represented in a 64-bit doubleword.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.85\linewidth]{img/doublep1.png}
+    }
+    \caption{\textit{LEGv8 double precision floating-point representation}}
+\end{figure}
+
+In the case of an overflow/underflow an interrupt (unscheduled disruption call) saves the address of the instruction (to resume after correction) and jumps to a predefined address that deals with the exception.
+
+\subsection*{IEEE 754 Floating-Point Standard Specifications}
+
+The floating-point can always have a leading \texttt{1.0}, as such IEEE assumes it as a hidden bit increasing the representation for the \texttt{fraction} by 1 (23 to 24 in single p., or 52 to 53 in double p.).
+
+\vspace{-2em}
+$$(-1)^S \times (1 + F) \times 2^{(\text{Exponent} - \text{Bias})}$$
+\vspace{-2em}
+$$(-1)^S \times (1 + (s1 \times 2^{-1}) + (s2 \times 2^{-2}) + ...) \times 2^E$$
+
+IEEE 754 has \texttt{NaN} for invalid operations (e.g. $\frac{0}{0}$). Infinities can be represented through the largest exponent representations (+/$-$) instead of interrupting.
+
+The sign bit is the most significant bit to easily process integer comparisons.
+
+For representing the exponent without needing a sign bit, IEEE 754 uses a bias of 127 for single, and 1023 for double, that subtracts from the total possible representation to denote negative and positive exponents.
+
+So for single precision, an exponent of $-1$ is $-1 + 127_{\text{ten}} = 126_{\text{ten}}$, and $+1$ is $1 + 127_{\text{ten}} = 128_{\text{ten}}$
+
+\subsection*{Floating-Point Addition}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.32\linewidth]{img/floatingpointadd.png}
+    }
+    \caption{\textit{Floating-point addition logic path}}
+\end{figure}
+\pagebreak
+\section*{Chapter 1}
+
+\subsection*{Design principles}
+
+\subsubsection*{\rightarrow \ \texttt{Design with Moore's Law}}
+\vspace{-0.5em}
+Moore's Law states that an integrated circuit resources double every 18–24 month.
+
+Thus, computer architects must anticipate where the technology will be when the design finishes rather than design for where it starts.
+
+\subsubsection*{\rightarrow \ \texttt{Abstraction to Simplify Design}}
+\vspace{-0.5em}
+Abstractions to hide lower-level details to simplify higher-level representations (more productive).
+
+\subsubsection*{\rightarrow \ \texttt{Common case fast}}
+\vspace{-0.5em}
+
+If you know what the common case is, enhancing it over the rarer cases is more optimal, as it involves more and is usually easier to enhance.
+
+\subsubsection*{\rightarrow \ \texttt{Performance via Parallelism}}
+\vspace{-0.5em}
+
+Computing operations in parallel (at the same time) increases performance over a time period.
+
+\subsubsection*{\rightarrow \ \texttt{Performance via Pipelining}}
+\vspace{-0.5em}
+
+Pipelining is a pattern of parallelism that involves increasing the throughput of a certain process (i.e. moving up the chain faster).
+
+\subsubsection*{\rightarrow \ \texttt{Performance via Prediction}}
+\vspace{-0.5em}
+
+If you can predict successfully to a degree you can anticipate instead of wait. In some cases it can be more beneficial to guess than to stall when misprediction costs are reasonable.
+
+\subsubsection*{\rightarrow \ \texttt{Memory hierarchy}}
+\vspace{-0.5em}
+
+The most expensive and fast memory per bit is at the top, and the opposite is at the bottom. Caches (top) can give the illusion of fast main memory (bottom).
+
+\subsubsection*{\rightarrow \ \texttt{Dependability via Redundancy}}
+\vspace{-0.5em}
+Systems become dependable when there is redundancy to account for solving failures and failure detections.
+
+\subsection*{Amdahl’s Law}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
