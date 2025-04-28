@@ -21,6 +21,7 @@
 \usepackage{amssymb}
 \usepackage{tabularray}
 \usepackage{subcaption}
+\usepackage{tocloft}
 
 \usepackage{caption}
 \captionsetup[lstlisting]{labelformat=empty,labelsep=none}
@@ -60,6 +61,7 @@
 \definecolor{moonstoneblue}{rgb}{0.45, 0.66, 0.76}
 \definecolor{moondark}{rgb}{0.30, 0.50, 0.60}
 
+% Inline code segment
 \lstdefinestyle{code}{
     frame=single,
     rulecolor=\color{codeFrame},
@@ -78,6 +80,14 @@
 }
 \lstset{style=code, language=C}
 
+% Table of contents
+\setlength{\cftbeforesecskip}{0pt}
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftsecpagefont}{\normalfont}
+\renewcommand{\contentsname}{Table of Content}
+\renewcommand{\cfttoctitlefont}{\hfill\Large\bfseries}
+\renewcommand{\cftaftertoctitle}{\hfill}
+
 %------–-------%
 % Initial page %
 %--------------%
@@ -86,7 +96,7 @@
 
 \maketitle
 
-\vspace{1em}
+\vspace{-3em}
 
 \begin{center}
 \section*{Exam contents and details for referencing}
@@ -109,9 +119,13 @@
     \item The order of appearance of contents in this document is arbitrary.
 \end{itemize}
 
+\vspace{-1em}
+\tableofcontents
+
 \pagebreak
 
 \section*{Appendix A}
+\addcontentsline{toc}{section}{Appendix A}
 
 \subsection*{Logic \& Gates}
 An \textit{asserted} signal is logically true, the \textit{deasserted} is the opposite.
@@ -219,7 +233,7 @@ You can use multiplexors to select between two buses, requiring n inputs to repr
 
 The LEGv8 word is 64 bits wide, as such a 64 bit wide ALU is required (64 1-bit ALUs).
 
-In its simplest form, a \underline{1-bit logical unit} for \texttt{AND} and \texttt{OR} operations simply requires a multiplexor an a one bit control signal to select between the two operations ($2^1=1$).
+In its simplest form, a \underline{1-bit logical unit} for \texttt{AND} and \texttt{OR} operations simply requires a multiplexor an a one bit control signal to select between the two operations ($2^1=2$).
 
 \begin{figure}[htbp]
     \centering
@@ -274,7 +288,7 @@ To implement a \texttt{NOR} function, existing components can be combined, $(\ov
     \label{fig:subalu}
 \end{figure}
 
-On a 64-bit ALU we can use a zero flag to help with conditional branch instructions in LEGv8 (e.g. \texttt{CBZ}), as they receive to inputs and require to test if the subtraction has a zero.
+On a 64-bit ALU we can use a zero flag \label{jmp:zero-flag} to help with conditional branch instructions in LEGv8 (e.g. \texttt{CBZ}), as they receive to inputs and require to test if the subtraction has a zero.
 
 The following represents this with an inversion of an \texttt{OR} tree on all results from the subtraction considering a 64-bit subtraction, fully represented in \autoref{fig:64aluzero}.
 \vspace{-1em}
@@ -436,6 +450,7 @@ The implementation for the two \underline{read ports} consists of using the stor
 \pagebreak
 
 \section*{Chapter 2}
+\addcontentsline{toc}{section}{Chapter 2}
 
 The size of a register in LEGv8 is 64 bits, which are denominated as doublewords (8 bytes).
 
@@ -702,6 +717,7 @@ Signed negative numbers look massive when looked at from an unsigned comparison 
 \pagebreak
 
 \section*{Chapter 3}
+\addcontentsline{toc}{section}{Chapter 3}
 
 \subsection*{Floating point representation}
 
@@ -779,6 +795,7 @@ So for single precision, an exponent of $-1$ is $-1 + 127_{\text{ten}} = 126_{\t
 \end{figure}
 \pagebreak
 \section*{Chapter 1}
+\addcontentsline{toc}{section}{Chapter 1}
 
 \subsection*{Design principles}
 
@@ -847,6 +864,139 @@ Splitting up the original time into the unimprovable part $1-f$ and the improvab
 As $S_E \rightarrow \infty$, the maximum overall speedup is $\frac{1}{1-f}$.
 
 Thus, taken as the ratio between the old and new speeds, the formula for Amdahl's Law emerges.
+
+\pagebreak
+
+\section*{Chapter 4}
+\addcontentsline{toc}{section}{Chapter 4}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Logic Design Elements,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Combinational elements}}: Do not store any information internally, such as an ALU, and logic gates. \\
+    {\color{moondark}\textbf{State elements}}: Have internal memory, a \textit{state}, that remembers even in power loss, such as registers or memory.
+\end{tcolorbox}
+
+\subsection*{Branching in the Datapath}
+
+Conditional branching is done by incrementing the PC (program counter, keeps track of the current instruction) by the word (4 bytes) alligned offset (64-bits).
+
+\vspace{-1em}
+$$\texttt{B offset \quad \quad CBZ \ Rd, offset}$$
+
+The \texttt{offset} varies in bits by instruction, requiring a sign-extension (from 32 to 64 bits), and 2 left shifts (word aligned multiple of 4 $=2^2$).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.5\linewidth]{img/datapath-branch.png}
+    }
+    \caption{\textit{Subset datapath for unconditional and conditional branching}}
+    \label{fig:data-branch}
+\end{figure}
+
+Control logic is used to decide whether the incremented PC or branch target should replace the PC, based on the \hyperref[jmp:zero-flag]{zero output} of the ALU, seen in \autoref{fig:data-branch}.
+
+
+\subsection*{Data memory unit and sign extensions}
+
+The sign extend takes the whole 32-bit instruction and selects the specific offset field size (e.g. 9 bits for loads and stores (small offset needed), 19 bits for \texttt{CBZ}), and fills upper bits with the most significant bit of the extracted address.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+        \includegraphics[width=0.2\linewidth]{img/sign-extend.png}
+    }
+    \caption{\textit{Sign extension from 32 bits to 64 bits}}
+\end{figure}
+
+
+For memory instructions (e.g. \texttt{LDUR}, \texttt{STUR}), we need to write and read from memory using the data memory unit.
+
+The structure takes in the address of memory to access, write input (when storing), read output (when loading), and read and write control signals.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.3\linewidth]{img/data-memory-unit.png}
+    }
+    \caption{\textit{Memory data unit diagram}}
+\end{figure}
+
+\subsection*{R-type, Branch, and Memory Instruction Datapath}
+
+Building the datapath for R-type (ALU operations), conditional branching, and memory instructions in a \underline{single} clock cycle.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=MUX Controlled by the ALUSrc Signal,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{R-type}}: Uses the value to do an ALU operation with the first register read output. \\
+    {\color{moondark}\textbf{Load/Store (D-type)}}: Uses the sign extended \texttt{offset} with the first output, that holds the memory address to load/store from. In this case, the second read register output is still relevant in storing, as it holds the data to be written.
+\end{tcolorbox}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=MUX Controlled by the MemtoReg Signal,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{R-type}}: Skips the reading stage from the data memory unit and sets the output of the ALU to be the \texttt{Write Data} input of the register file. \\
+    {\color{moondark}\textbf{Store (D-type)}}: Reads at \texttt{address + offset} from the data memory unit, and redirects the output to the \texttt{Write Data} input of the register file.
+\end{tcolorbox}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.8\linewidth]{img/rtype-datapath.png}
+    }
+    \caption{\textit{Memory data unit diagram}}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.8\linewidth]{img/instruction-classes.png}
+    }
+    \caption{\textit{Memory data unit diagram}}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
