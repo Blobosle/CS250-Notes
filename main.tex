@@ -973,16 +973,65 @@ Building the datapath for R-type (ALU operations), conditional branching, and me
     \fcolorbox{codeFrame}{white}{
        \includegraphics[width=0.8\linewidth]{img/rtype-datapath.png}
     }
+    \caption{\textit{Datapath for R-type, load/store, and branching instructions}}
+\end{figure}
+
+\subsection*{Instruction Parititions by Instruction Memory}
+
+Considering the R-type, load/store, and conditional branching formats, they are broken down as seen in \autoref{fig:inst-classes}.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.55\linewidth]{img/instruction-classes.png}
+    }
     \caption{\textit{Memory data unit diagram}}
+    \label{fig:inst-classes}
+\end{figure}
+
+\textit{Simplicity favors regularity}: The more uniform the design, the simpler the control logic for decoding the instruction (Instruction Memory).
+
+\subsection*{Generating the ALU Control Input}
+
+The ALU control is made up from the \texttt{opcode} (11-bit) and a 2-bit control signal \texttt{ALUOp}.
+
+The \texttt{opcode} field only has three bits that matter when determining function (30, 29, 24).
+
+\texttt{ALUOp} encodes for addition (\texttt{0 0}), passing input B considering \texttt{CBZ} (\texttt{X 1}), and other functions (\texttt{1 X}).
+\vspace{-1em}
+$$\texttt{ALU operation } (4) = \texttt{ALUOp }(2) + \texttt{opcode } (11 \text{ but uses } 3)$$
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.7\linewidth]{img/aluop-codes.png}
+    }
+    \caption{\textit{Truth table for the 4 ALU control bits, with additional "don't care entries"}}
 \end{figure}
 
 \begin{figure}[htbp]
     \centering
     \fcolorbox{codeFrame}{white}{
-       \includegraphics[width=0.8\linewidth]{img/instruction-classes.png}
+       \includegraphics[width=0.7\linewidth]{img/complete-datapath1.png}
     }
-    \caption{\textit{Memory data unit diagram}}
+    \caption{\textit{Datapath for R-type, D-type, and branching instructions with all 9 control lines}}
+    \label{fig:complete-dapath}
 \end{figure}
+
+Consider in \autoref{fig:complete-dapath}, the \texttt{PCSrc} signal, that determines whether to increment PC by 4 or by the offset specified, does not originate from the \textbf{control unit}, but rather the \texttt{branch} signal from the control unit being asserted and the zero output of the ALU is asserted.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.7\linewidth]{img/instructions-controllines.png}
+    }
+    \caption{\textit{Setting control lines according to desired instruction (determined by opcode)}}
+\end{figure}
+
+\subsection*{Implementing Unconditional Branching into Datapath}
+
+Adding a new signal \texttt{UncondBranch} to the control unit and \texttt{OR}ing it with the reulting \texttt{PCSrc} control signal that emerges from the \texttt{branch} control signal.
+
 
 
 
