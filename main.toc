@@ -2,4 +2,5 @@
 \contentsline {section}{Chapter 2}{11}{section*.28}%
 \contentsline {section}{Chapter 3}{16}{section*.36}%
 \contentsline {section}{Chapter 1}{18}{section*.43}%
-\contentsline {section}{Chapter 4}{20}{section*.54}%
+\contentsline {section}{Chapter 4: Datapath}{20}{section*.54}%
+\contentsline {section}{Chapter 4: Pipelining}{25}{section*.70}%

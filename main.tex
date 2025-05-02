@@ -867,8 +867,8 @@ Thus, taken as the ratio between the old and new speeds, the formula for Amdahl'
 
 \pagebreak
 
-\section*{Chapter 4}
-\addcontentsline{toc}{section}{Chapter 4}
+\section*{Chapter 4: Datapath}
+\addcontentsline{toc}{section}{Chapter 4: Datapath}
 
 \begin{tcolorbox}[
     enhanced,
@@ -1030,7 +1030,114 @@ Consider in \autoref{fig:complete-dapath}, the \texttt{PCSrc} signal, that deter
 
 \subsection*{Implementing Unconditional Branching into Datapath}
 
-Adding a new signal \texttt{UncondBranch} to the control unit and \texttt{OR}ing it with the reulting \texttt{PCSrc} control signal that emerges from the \texttt{branch} control signal.
+Adding a new signal \texttt{UncondBranch} to the control unit and \texttt{OR}ing it with the resulting \texttt{PCSrc} control signal that emerges from the \texttt{branch} control signal.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.7\linewidth]{img/uncond-branch-datapath.png}
+    }
+    \caption{\textit{Datapath with UncondBranch control signal}}
+\end{figure}
+
+Single cycle implementations have the limitation that the clock cycle needs to be greater than the time it takes to complete the longest possible path (load instruction: uses the IM, RegFile, ALU, DataMemory, and the RegFile again).
+
+\pagebreak
+
+\section*{Chapter 4: Pipelining}
+\addcontentsline{toc}{section}{Chapter 4: Pipelining}
+
+Pipelining overlaps instructions in execution.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=LEGv8 Pipelining Steps,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{1. IF}}: Fetch instructions from memory. \\
+    {\color{moondark}\textbf{2. ID}}: Decode instructions and read registers.\\
+    {\color{moondark}\textbf{3. EX}}: Executes the op. or calculates the address.\\
+    {\color{moondark}\textbf{4. MEM}}: Access data memory (if needed).\\
+    {\color{moondark}\textbf{5. WB}}: Writing back into register (if needed).
+\end{tcolorbox}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeFrame}{white}{
+       \includegraphics[width=0.7\linewidth]{img/simple-pipeline.png}
+    }
+    \caption{\textit{Single-cycle execution vs Pipelined execution, showing an improvement from 800ps to 200ps}}
+\end{figure}
+
+Pipelining improves performance by increasing instruction \textit{throughput} instead of decreasing execution times by instruction.
+
+\subsection*{Pipeline Hazards}
+
+\subsubsection*{\rightarrow \ \texttt{Structural Hazard}}
+\vspace{-0.5em}
+
+When one element cannot support two instructions at the same time.
+
+Imagined if there was no distinction between IM and Data Memory, which would cause a first instruction to access data, while a fourth one is trying to fetch it at the same time.
+
+\subsubsection*{\rightarrow \ \texttt{data hazards}}
+\vspace{-0.5em}
+
+When a new instruction needs data from another instruction that has not yet finished executing.
+
+Dependence from one instruction to an earlier one.
+
+\begin{verbatim}
+    ADD     X19, X0, X1
+    SUB     X2, X19, X3     // X19 depends on ADD instruction's execution
+\end{verbatim}
+
+Stalling would cause a waste of 3 clock cycles, and compilers opts are not enough.
+
+A solution is to \textbf{forward} or bypass, which entails, in the example, to supply the result of the ALU directly into the input of the subtraction (or RegFile write).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.7\linewidth]{img/simple-forwarding.png}
+    }
+    \caption{\textit{forwarding implementation in \texttt{add} and \texttt{sub} example}}
+\end{figure}
+
+There are cases where pipeline stalls or bubbles are present in forwarding, such as the \textbf{load-use data hazard}, in which the data has not yet been loaded when they are needed by another instruction.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.7\linewidth]{img/load-after-use-stall.png}
+    }
+    \caption{\textit{Load-use hazard with one cycle stalling to forward data}}
+\end{figure}
+
+\subsubsection*{\rightarrow \ \texttt{Control Hazards}}
+\vspace{-0.5em}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
