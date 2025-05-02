@@ -1049,6 +1049,7 @@ Single cycle implementations have the limitation that the clock cycle needs to b
 
 Pipelining overlaps instructions in execution.
 
+\label{jmp:five-stages}
 \begin{tcolorbox}[
     enhanced,
     attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
@@ -1078,6 +1079,68 @@ Pipelining overlaps instructions in execution.
 
 Pipelining improves performance by increasing instruction \textit{throughput} instead of decreasing execution times by instruction.
 
+\subsection*{Pipelining the Datapath}
+
+The separation of the \hyperref[jmp:five-stages]{five stages} can be seen in the datapath below.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.7\linewidth]{img/simple-five-stage-datapath.png}
+    }
+    \caption{\textit{Five stages separation in Datapath}}
+\end{figure}
+
+The left to right flow has some exceptions. Write backs involve putting a result in the middle of the path. The selection of the branch that involves +4 or jumping.
+
+Pipeline registers separate the five stages and prevent data loss, keeping stability for newer instructions to use.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.7\linewidth]{img/pipelined-reg-datapath.png}
+    }
+    \caption{\textit{Pipeline registers in Datapath: IF/ID, ID/EX, EX/MEM, MEM/WB}}
+\end{figure}
+
+Each logical component (Inst. Mem, RegFile, ALU, etc) must be used only once in a single pipeline stage to avoid \textit{structural hazards}.
+
+As instructions, like loads, need to keep track of a write back register, \texttt{Rt}, which means that this information needs to be propagated all the way upto the MEM/WB stage.
+
+Propagation also happens with the PC, for calculating branching.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.7\linewidth]{img/final-pipelined-datapath.png}
+    }
+    \caption{\textit{Pipelined Datapath with propagates write back register}}
+\end{figure}
+
+\subsection*{Pipelining the Control}
+
+As each control line is associated with one component active in one pipeline stage, the five stages can be used to classify the existing control signals. This means that pipelined registers can be expanded to fit the control signals.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.7\linewidth]{img/control-piped.png}
+    }
+    \caption{\textit{Control signals with applied Pipelining}}
+\end{figure}
+
+Considering that the control signals start at EX, the control information can be created at ID.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.7\linewidth]{img/full-control-pipeline.png}
+    }
+    \caption{\textit{Pipelined Datapath with Pipelined Control Signals}}
+\end{figure}
+
+The \texttt{Reg2Loc} signal is directly encoded into the instruction field as a bit that determined whether to use the \texttt{Rm} for R-type or \texttt{Rt} for cond. branching and load/store instructions.
+
 \subsection*{Pipeline Hazards}
 
 \subsubsection*{\rightarrow \ \texttt{Structural Hazard}}
@@ -1087,12 +1150,12 @@ When one element cannot support two instructions at the same time.
 
 Imagined if there was no distinction between IM and Data Memory, which would cause a first instruction to access data, while a fourth one is trying to fetch it at the same time.
 
-\subsubsection*{\rightarrow \ \texttt{data hazards}}
+\subsubsection*{\rightarrow \ \texttt{Data Hazards}}
 \vspace{-0.5em}
 
 When a new instruction needs data from another instruction that has not yet finished executing.
 
-Dependence from one instruction to an earlier one.
+Data dependence from one instruction to an earlier one.
 
 \begin{verbatim}
     ADD     X19, X0, X1
@@ -1121,8 +1184,19 @@ There are cases where pipeline stalls or bubbles are present in forwarding, such
     \caption{\textit{Load-use hazard with one cycle stalling to forward data}}
 \end{figure}
 
+\textbf{True data dependences} are when results are used later as operands.
+
+\pagebreak
 \subsubsection*{\rightarrow \ \texttt{Control Hazards}}
 \vspace{-0.5em}
+
+When the fetched instruction is not the one needed (e.g. encountered branching).
+
+Prediction is used to assume rather than wait for the branch to accertain the outcome, such as always not taking the branch.
+
+Dynamic prediction differs in result depending of what happened before (keeping a history).
+
+The penalty for an incorrect prediction is that the pipeline must restart from the proper branch address, stalling the process.
 
 
 
