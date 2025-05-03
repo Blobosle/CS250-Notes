@@ -1171,11 +1171,12 @@ A solution is to \textbf{forward} or bypass, which entails, in the example, to s
     \fcolorbox{codeframe}{white}{
        \includegraphics[width=0.7\linewidth]{img/simple-forwarding.png}
     }
-    \caption{\textit{forwarding implementation in \texttt{add} and \texttt{sub} example}}
+    \caption{\textit{forwarding implementation in \texttt{ADD} and \texttt{SUB} example}}
 \end{figure}
 
 There are cases where pipeline stalls or bubbles are present in forwarding, such as the \textbf{load-use data hazard}, in which the data has not yet been loaded when they are needed by another instruction.
 
+\pagebreak
 \begin{figure}[htbp]
     \centering
     \fcolorbox{codeframe}{white}{
@@ -1186,7 +1187,43 @@ There are cases where pipeline stalls or bubbles are present in forwarding, such
 
 \textbf{True data dependences} are when results are used later as operands.
 
+\textbf{False data dependences} are when results are not passed through yet are clobbered, such as reading a register and then writing to the same register (write clobbers the read, but can be solved by using another register name).
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Types of False Data Dependences,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Anti-dependence}}: Reading a register and then writting (clobbering) to the same register (WAR). \\
+    {\color{moondark}\textbf{Output dependence}}: Writing to a register and then writing to the same register (WAW).
+\end{tcolorbox}
+
 \pagebreak
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/datadep-example.png}
+    }
+    \caption{\textit{Green are True dependences, Red are Anti-dependences, and Blue are Output-dependences}}
+\end{figure}
+
+For stalling you can use \texttt{NOP} instructions that have no effect other than acting as bubbles in the pipeline, in order to conserve the forwarding.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/stall-nop.png}
+    }
+    \caption{\textit{Example of \texttt{NOP} use for stalling and later forwarding}}
+\end{figure}
+
 \subsubsection*{\rightarrow \ \texttt{Control Hazards}}
 \vspace{-0.5em}
 
@@ -1198,8 +1235,105 @@ Dynamic prediction differs in result depending of what happened before (keeping 
 
 The penalty for an incorrect prediction is that the pipeline must restart from the proper branch address, stalling the process.
 
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Simple Branch Prediction Methodologies,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Branch not taken}}: Never takes a branch, and proceeds full speed when branch is not resolved (\textit{branch taken} is the opposite). \\
+    {\color{moondark}\textbf{1-bit Dynamic branch}}: Keeps a 1-bit history of whether the branch was taken or not, and replicates latest behavior.
+\end{tcolorbox}
 
+Another two ways to predict are using 2-bit prediction, and tournament schemes (multiple predictions for a branch and they "compete").
 
+With 2-bit predictions, there are 4 states of decisions: strongly taken, weakly taken, strongly not taken, weakly not taken. If "strongly", then if it is the opposite it will become "weakly", and if it is "weakly" then if it is the opposite it will become the other "weakly" (like two-step verification).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/two-bit-branch.png}
+    }
+    \caption{\textit{2-bit Branch Prediction Logic}}
+\end{figure}
+
+\section*{Chapter 5}
+\addcontentsline{toc}{section}{Chapter 5}
+
+The memory hierarchy has elements increasing in sizes and access times the further away from the processor they are. Derived from the locality principle.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/mem-pyramid.png}
+    }
+    \caption{\textit{2-bit Branch Prediction Logic}}
+\end{figure}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Principle of Locality,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Temporal}}: If an element is referenced, then it will tend to be referenced again very soon. \\
+    {\color{moondark}\textbf{Spacial}}: If an element is referenced, then elements around it will tend to be referenced again very soon. \\
+    \textit{Elements in this case refers to data locations.}
+\end{tcolorbox}
+
+\subsection*{SRAM}
+
+Memory arrays with a read/write port that have a fixed access time to any data.
+
+They don't need refreshing (access time is close to cycle time) and they require minimal power to retain charge in standby.
+
+\textit{Used to be used as caches, but nowadays caches are integrated onto the processor chip.}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/sram-array.png}
+    }
+    \caption{\textit{SRAM array bit addressing}}
+\end{figure}
+
+For selection, there is a row (word-line MUX) and column decoder (column MUX/DEMUX).
+
+$\rightarrow$ Row: Takes the higher order $k$ bits of the address and allows selection of $2^k$ rows.
+
+$\rightarrow$ Column: Takes the remaining lower order $m$ bits and allows selection of $2^m$ columns.
+
+\subsection*{DRAM}
+
+Called \textit{dynamic} because it requires \underline{periodical refreshing} (read out and write in), in contrast to SRAM (static).
+
+To save time, DRAM (made up of banks that can be accessed in parallel) refreshes entire rows at a time (two-level decoding) through fast buffers (SRAM-like).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/internal-dram.png}
+    }
+    \caption{\textit{DRAM Banks and Row Buffering}}
+\end{figure}
+
+Once in a row buffer, you can access all data of the row by changing the column address at no major cost.
+
+\textbf{SDRAM}s share clock signal (synchronous), which has faster and more predictable access times. \textit{No need for time negotiation overhead.}
+
+\subsection*{Flash Memory}
 
 
 
