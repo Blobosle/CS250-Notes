@@ -5,3 +5,4 @@
 \contentsline {section}{Chapter 4: Datapath}{20}{section*.54}%
 \contentsline {section}{Chapter 4: Pipelining}{25}{section*.70}%
 \contentsline {section}{Chapter 5}{31}{section*.88}%
+\contentsline {section}{Week 12}{42}{section*.116}%

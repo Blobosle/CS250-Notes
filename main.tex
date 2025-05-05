@@ -200,6 +200,7 @@ $$n \text{ (data inputs)} \therefore \log_2{n} = S \text{ selector bits required
 Often times a decoder generates n bits for a MUX, to be used as a selector signal.
 
 \subsection*{Buses}
+\label{jmp:buses-general}
 
 A collection of data lines that is treated as a single logical signal.
 
@@ -1376,9 +1377,11 @@ Cache entries can be computed with the lower order k-bits, called the \textbf{in
     \caption{\textit{Direct Mapping Cache Block Addressing illustration}}
 \end{figure}
 
-There is also a \textbf{valid bit} to distinguish whether the cache entry has valid data (e.g. upon processor start up).
+There is also a \textbf{valid bit} to distinguish whether the cache entry has valid data (e.g. upon processor start up), and a \textbf{dirty bit} that indicates writes to a cache line after it was brought in (for things like updating the reference in main memory).
 
 Caches benefit from \textit{temporal locality} as referenced words replace less than recently referenced ones.
+
+Note that the cache address starts with a byte offset (needed later to index into sets and pick which block is needed).
 
 \begin{figure}[htbp]
     \centering
@@ -1503,6 +1506,16 @@ $\rightarrow$ The virtual page number (VPN) has more bits, and thus maps to more
     \caption{\textit{Virtual address translation to Physical addresses}}
 \end{figure}
 
+Physical memory is stored in three parts: OS, page table, page frames (largest).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.4\linewidth]{img/physical-mem.png}
+    }
+    \caption{\textit{Virtual address translation to Physical addresses}}
+\end{figure}
+
 \subsection*{Page Tables}
 
 To find the corresponding physical page number (PPN) from a VPN, we use \textbf{page tables}, seen in the \autoref{fig:page-table}.
@@ -1534,12 +1547,53 @@ To find the corresponding physical page number (PPN) from a VPN, we use \textbf{
     \label{fig:page-table}
 \end{figure}
 
+The problem with design is that it will generate a massive page table (too big to fit in RAM), so the solution is to add multi-level page tables.
+
+$\rightarrow$ \underline{First level page table} (page-directory) is allocated always, and will point to second level page tables.
+
+$\rightarrow$ \underline{Second level page tables} are allocated as they are used, and point to another level or the physical memory address needed.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/multi-level-paging.png}
+    }
+    \caption{\textit{Multi-level Page Table illustration}}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/multi-level-table-split.png}
+    }
+    \caption{\textit{Multi-level Page Table address field}}
+\end{figure}
+
+A way to speed up this process is using the TLB (translation lookaside buffer) that acts like a full-associative cache into the page-directory.
+
+Fully-associative as conflict misses will turn into capacity misses (capacity required is low).
+
+For improving TLB lookups we can use the CAM (content addressable memory) that, in constant time, gets a key and does parallel comparisons will all CAM entries.
+
+$\rightarrow$ Upon hit it gives the PPN and metadata (e.g. SIGSEGV detection), and upon miss it uses the page-directory.
+
+CAM is expensive and is organized as N m-bit slots, where N and m are chosen by need.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/vm-cam.png}
+    }
+    \caption{\textit{CAM structure for constant time parallel access}}
+\end{figure}
+
 \subsection*{Page Faults}
 
 The additional mappings by the VPN, that are not to main memory, map to the \textbf{swap space} (on disk or flash).
 
 When a page fault occurs the OS will add the \textit{least recently used} page (prediction).
 
+\pagebreak
 \begin{figure}[htbp]
     \centering
     \fcolorbox{codeframe}{white}{
@@ -1547,6 +1601,98 @@ When a page fault occurs the OS will add the \textit{least recently used} page (
     }
     \caption{\textit{Page Table that maps to main memory and swap space}}
 \end{figure}
+
+The MMU (memory management unit) makes up the page table register and the TLB, and will send the page fault signal (upon miss) to the OS, who then calls the page fault handler.
+
+Handling page faults takes a lot of time.
+
+\subsection*{Bus Errors}
+
+Following of what was said about buses \hyperref[jmp:buses-general]{before}, there are potential errors that can arise.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Bus errors,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Address conflicts}}: Two different elements/devices respond to the same address bus. \\
+    {\color{moondark}\textbf{Unassigned address}}: No devices respond to a given address.
+\end{tcolorbox}
+
+\pagebreak
+\section*{Week 12 Slides}
+\addcontentsline{toc}{section}{Week 12}
+
+Interrupts are built in hardware, that saves the current pointer, jumps to code for the interrupt, and resumes execution from when \textit{return from interrupt} is reached.
+
+\subsection*{Device Drivers}
+
+The \textbf{device driver} is software that communicates with a device: initializes the device, CSRs (control \& status registers) are set to start I/O ops, and handles device interrupts.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Purpose of Device Drivers,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Encapsulation}}: Creates an interface for wrapping up the details of how to talk to a device. \\
+    {\color{moondark}\textbf{Hiding}}: Hides what happens under the hood. \\
+    {\color{moondark}\textbf{Independence}}: No dependence on the design of any device (generic).
+\end{tcolorbox}
+
+The structure of a device driver: lower half, upper half, and shared variables.
+
+$\rightarrow$ \underline{Lower half}: Handler code invoked during interrupt (direct communication to device).
+
+$\rightarrow$ \underline{Upper half}: Functions invoked by applications (I/O requests).
+
+$\rightarrow$ \underline{Shared variables}: Used by both halves with input and output buffers.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.6\linewidth]{img/device-driver.png}
+    }
+    \caption{\textit{Device driver structure}}
+\end{figure}
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Types of Devices,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{Character oriented}}: Transfer one byte at a time (e.g. keyboards). \\
+    {\color{moondark}\textbf{Block oriented}}: Transfer blocks of data at a time (e.g. disks, network interfaces).
+\end{tcolorbox}
+
+\subsection*{Output Request Queue}
+
+There is a queue shared by both halves (shared variables), where the top enqueues (when the application issues I/O) and the bottom dequeues the next request (starting it).
+
+
+
+
+
 
 
 
