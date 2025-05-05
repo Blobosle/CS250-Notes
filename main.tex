@@ -109,14 +109,14 @@
     \vspace{-0.8em}
     \begin{itemize}[itemsep=-0.5em, left=0pt, label={•}]
     \item Chapter 1 sections 1, 2, and 3.
-    \item Chapter 2, sections 1, 2, 3, 4, 5, 6, and 7.
+    \item Chapter 2, sections 1, 2, 3, 4, 5, 6, 7, \textbf{8, 11, and 12}.
     \item Chapter 3, sections 1, 2, and 5.
     \item Chapter 4, sections 1, 2, 3, 4, 5, 6, 7, and 8.
-    \item Chapter 5, sections 1, 2, 3, 4, 7, and 8.
+    \item Chapter 5, sections 1, 2, 3, 4, and \textbf{7}.
+    \item Chapter 6, sections \textbf{1, 2, 3, 4, 5, 6, 7, and 8}.
     \item Chapter 8 (Appendix A), sections 1, 2, 3 (but not PLAs or ROMs), 5, 7 (lightly), and 8.
+    \item \textbf{Slides Week 12}.
     \end{itemize}
-    \item All lecture notes and lecture slides.
-    \item All labs (1 - 11).
     \item The order of appearance of contents in this document is arbitrary.
 \end{itemize}
 
@@ -1470,6 +1470,89 @@ A more detailed look into the memory hierarchy.
     }
     \caption{\textit{Example of Memory access with the three different Cache designs}}
 \end{figure}
+
+\subsection*{Virtual Memory}
+
+Main memory has limited space, so \textbf{virtual memory} treats it like a "cache relative to secondary storage" (handles managing the two memories).
+
+To enforce protection between different programs, virtual memory allows all programs to have their own \textbf{address space}, which addresses will get translated into \textit{physical addresses} (relocation).
+
+If it is not mapped to main memory, then it gets mapped to secondary regions (e.g. disk).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/vm-translation.png}
+    }
+    \caption{\textit{Pages mapped from Virtual addresses to Physical addresses}}
+\end{figure}
+
+When a virtual memory block requested is not in main memory there is a \textbf{page fault}.
+
+Virtual memory addresses are made of the \textit{virtual page number} (high-order bits) and a \textit{page offset} (low-order bits).
+
+$\rightarrow$ The page offset remains unchanged when translating from virtual to physical addresses and is used to obtain information directly from page.
+
+$\rightarrow$ The virtual page number (VPN) has more bits, and thus maps to more locations than the physical page number (main memory vs secondary memory). Illusion of unbounded memory.
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/vm-addressing.png}
+    }
+    \caption{\textit{Virtual address translation to Physical addresses}}
+\end{figure}
+
+\subsection*{Page Tables}
+
+To find the corresponding physical page number (PPN) from a VPN, we use \textbf{page tables}, seen in the \autoref{fig:page-table}.
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Step by Step on Page Table Indexing,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{1. VPN gets aligned with Page Table}}: VPN gets multiplied by the size of a PTE (page table entry), and then gets added to the base of the page table stored in the Page Table register (like an array entry). \\
+    {\color{moondark}\textbf{2. Mapping and access of PPN}}: There can be either a \texttt{NOT PRESENT} (causing a page fault) or a PPN (valid bit) indexed at the VPN offset calculated.
+\end{tcolorbox}
+
+\pagebreak
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/vm-page-table.png}
+    }
+    \caption{\textit{Page Table illustration with a valid bit to determine entry}}
+    \label{fig:page-table}
+\end{figure}
+
+\subsection*{Page Faults}
+
+The additional mappings by the VPN, that are not to main memory, map to the \textbf{swap space} (on disk or flash).
+
+When a page fault occurs the OS will add the \textit{least recently used} page (prediction).
+
+\begin{figure}[htbp]
+    \centering
+    \fcolorbox{codeframe}{white}{
+       \includegraphics[width=0.5\linewidth]{img/full-page-table.png}
+    }
+    \caption{\textit{Page Table that maps to main memory and swap space}}
+\end{figure}
+
+
+
+
+
+
 
 
 
