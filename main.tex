@@ -97,7 +97,7 @@
 
 \maketitle
 
-\vspace{-3em}
+\vspace{-2em}
 
 \begin{center}
 \section*{Exam contents and details for referencing}
@@ -120,7 +120,7 @@
     \item The order of appearance of contents in this document is arbitrary.
 \end{itemize}
 
-\vspace{-1em}
+\pagebreak
 \tableofcontents
 
 \pagebreak
@@ -451,8 +451,8 @@ The implementation for the two \underline{read ports} consists of using the stor
 
 \pagebreak
 
-\section*{Chapter 2}
-\addcontentsline{toc}{section}{Chapter 2}
+\section*{Chapter 2: ASM}
+\addcontentsline{toc}{section}{Chapter 2: ASM}
 
 The size of a register in LEGv8 is 64 bits, which are denominated as doublewords (8 bytes).
 
@@ -1685,9 +1685,62 @@ $\rightarrow$ \underline{Shared variables}: Used by both halves with input and o
     {\color{moondark}\textbf{Block oriented}}: Transfer blocks of data at a time (e.g. disks, network interfaces).
 \end{tcolorbox}
 
-\subsection*{Output Request Queue}
+\subsection*{Shared Variable Queue in Device Drivers}
 
-There is a queue shared by both halves (shared variables), where the top enqueues (when the application issues I/O) and the bottom dequeues the next request (starting it).
+There are input and output queues used to deal with writing and reading (from app to driver blocks).
+
+$\rightarrow$ \underline{Writing}, the application calls \texttt{write()} (no pause to program execution) that sends the outgoing packet to the upper half (through protocol sw.), forces device interrupt which triggers lower half to extract item from output queue and sends it to the device, and returns from interrupt.
+
+$\rightarrow$ \underline{Reading}, the device sends ingoing packet to the lower half (device interrupt), sends to input queue, and upper half extracts if queue is non-empty and sends it to the application when it calls \texttt{read()}.
+
+This process uses \textbf{CSRs} (control and status registers), that communicate between the device and the driver by writing specific bits into the register (e.g. when the upper half needs to interrupt, it writes to the CSR so interrupt handler knows what to do).
+
+\subsection*{Hazards and Optimizations on Device Drivers}
+
+The \textbf{mutual exclusion} principle of device drivers refers to that only one read/write process on the device at a time.
+
+For optimization, attempt to reduce the number of \textit{syscalls} (large overhead) by transferring more data per cell.
+
+Buffering is the solution to this, usually abstracted through library functions (e.g. \texttt{fscanf()}).
+
+\begin{tcolorbox}[
+    enhanced,
+    attach boxed title to top left={xshift=6mm,yshift=-1.5mm},
+    colback=moonstoneblue!20,
+    colframe=moonstoneblue,
+    colbacktitle=moonstoneblue,
+    title=Operations used for Buffering,
+    fonttitle=\bfseries\color{white},
+    boxed title style={size=small,colframe=moonstoneblue,sharp corners},
+    sharp corners,
+    label=box:logic-types,
+]
+    {\color{moondark}\textbf{setup}}: Initialize input/output buffers. \\
+    {\color{moondark}\textbf{input}}: Input operation. \\
+    {\color{moondark}\textbf{output}}: Output operation. \\
+    {\color{moondark}\textbf{terminate}}: Discontinue the use of buffers. \\
+    {\color{moondark}\textbf{flush}}: Force write from output buffer.
+\end{tcolorbox}
+
+A buffer of size N reduces the number of syscalls by a factor of N (i.e. no longer needs to do N syscalls, but rather 1 syscall of N size).
+
+\section*{Chapter 2: Compilation}
+\addcontentsline{toc}{section}{Chapter 2: Compilation}
+
+\subsection*{Function Calling}
+
+There are 8 registers (\texttt{X0-X8}) that are used to pass arguments.
+
+The \textbf{return address} is a pointer stored in the link register (\texttt{LR} or \texttt{X30}) that allows the procedure to return to the function that called it. The address increment to the new function, and a write to \texttt{LR} can be done with \texttt{BL}.
+
+\begin{verbatim}
+    BL      TagerAddress    // LR is set to the default next instruction (PC + 4)
+\end{verbatim}
+
+
+
+
+
 
 
 
