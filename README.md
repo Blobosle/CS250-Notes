@@ -8,4 +8,4 @@ For anyone snooping around, the notes can be found in ``main.pdf`` and are thoro
 
 The information is based on the book "Computer Organization and Design - ARM Edition" by Patterson and Hennessy.
 
-**Notes are not yet completed**
+**Notes are not yet completed, and writing is in hiatus**
